@@ -1,1 +1,1 @@
-export const DEFAULT_ZOOM = 100;
+export const DEFAULT_ZOOM = 150;

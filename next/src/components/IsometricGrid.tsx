@@ -33,6 +33,7 @@ export const IsometricGrid = ({ width, length }: Props) => {
 
       ctx.strokeStyle = "#555";
       ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.2;
 
       for (let i = 0; i < width; i++) {
         for (let j = 0; j < length; j++) {

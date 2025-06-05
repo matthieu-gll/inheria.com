@@ -133,7 +133,9 @@ export const Player = ({
         ctx.lineTo(tilePoints[i].x, tilePoints[i].y);
       }
       ctx.closePath();
+      ctx.globalAlpha = 0.5;
       ctx.stroke();
+      ctx.globalAlpha = 1;
 
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(
