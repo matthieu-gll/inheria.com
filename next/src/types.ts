@@ -1,0 +1,1 @@
+export type RenderCallback = (ctx: CanvasRenderingContext2D, dt: number) => void;

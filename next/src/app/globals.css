@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+body {
+  @apply bg-neutral-900;
+}
+
+.rendering-pixelated {
+  image-rendering: pixelated;
+}
