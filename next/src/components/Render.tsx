@@ -14,10 +14,16 @@ export function Render({ children, enableZoom = false }: RenderProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const callbacks = useRef<Set<RenderCallback>>(new Set());
   const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
+  const animationFrameId = useRef<number>(null);
   const { zoom } = useZoomStore();
-  console.log(zoom);
 
-  // 1. Initialisation du canvas et du contexte
+  const resizeCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -26,11 +32,12 @@ export function Render({ children, enableZoom = false }: RenderProps) {
     if (!context) return;
 
     setCtx(context);
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    resizeCanvas();
+
+    window.addEventListener("resize", resizeCanvas);
+    return () => window.removeEventListener("resize", resizeCanvas);
   }, []);
 
-  // 2. Boucle de rendu, dépendante de `ctx`, `enableZoom`, `zoom`
   useEffect(() => {
     if (!ctx) return;
 
@@ -41,7 +48,6 @@ export function Render({ children, enableZoom = false }: RenderProps) {
       lastTime = time;
 
       ctx.save();
-
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
       if (enableZoom) {
@@ -56,10 +62,16 @@ export function Render({ children, enableZoom = false }: RenderProps) {
 
       ctx.restore();
 
-      requestAnimationFrame(render);
+      animationFrameId.current = requestAnimationFrame(render);
     };
 
-    requestAnimationFrame(render);
+    animationFrameId.current = requestAnimationFrame(render);
+
+    return () => {
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+    };
   }, [ctx, enableZoom, zoom]);
 
   const value = {
