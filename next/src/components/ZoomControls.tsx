@@ -10,9 +10,9 @@ export const ZoomControls = () => {
     zoom: {
       value: zoom,
       min: 0,
-      max: 200,
+      max: 1000,
       step: 1,
-      onChange: (val) => setZoom(val / 100),
+      onChange: (val) => setZoom(val),
     },
   });
 

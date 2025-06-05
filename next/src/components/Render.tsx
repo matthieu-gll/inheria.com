@@ -15,7 +15,9 @@ export function Render({ children, enableZoom = false }: RenderProps) {
   const callbacks = useRef<Set<RenderCallback>>(new Set());
   const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
   const { zoom } = useZoomStore();
+  console.log(zoom);
 
+  // 1. Initialisation du canvas et du contexte
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -26,6 +28,11 @@ export function Render({ children, enableZoom = false }: RenderProps) {
     setCtx(context);
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+  }, []);
+
+  // 2. Boucle de rendu, dépendante de `ctx`, `enableZoom`, `zoom`
+  useEffect(() => {
+    if (!ctx) return;
 
     let lastTime = performance.now();
 
@@ -33,27 +40,27 @@ export function Render({ children, enableZoom = false }: RenderProps) {
       const dt = (time - lastTime) / 1000;
       lastTime = time;
 
-      context.save();
+      ctx.save();
 
-      context.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
       if (enableZoom) {
-        context.translate(canvas.width / 2, canvas.height / 2);
-        context.scale(zoom, zoom);
-        context.translate(-canvas.width / 2, -canvas.height / 2);
+        ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
+        ctx.scale(zoom / 100, zoom / 100);
+        ctx.translate(-ctx.canvas.width / 2, -ctx.canvas.height / 2);
       }
 
       for (const cb of callbacks.current) {
-        cb(context, dt);
+        cb(ctx, dt);
       }
 
-      context.restore();
+      ctx.restore();
 
       requestAnimationFrame(render);
     };
 
     requestAnimationFrame(render);
-  }, [enableZoom, zoom]);
+  }, [ctx, enableZoom, zoom]);
 
   const value = {
     register: (fn: RenderCallback) => callbacks.current.add(fn),
