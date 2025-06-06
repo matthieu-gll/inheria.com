@@ -3,6 +3,7 @@
 import { useRendering } from "@/hooks/useRendering";
 import { useEffect } from "react";
 import { useGridStore } from "@/stores/useGridStore";
+import { useZoomStore } from "@/stores/useZoomStore";
 
 interface Props {
   width: number;
@@ -20,6 +21,8 @@ export const IsometricGrid = ({ width, length }: Props) => {
     setDimensions,
   } = useGridStore();
 
+  const { zoom } = useZoomStore();
+
   useEffect(() => {
     setDimensions(width, length);
   }, [width, length]);
@@ -29,8 +32,11 @@ export const IsometricGrid = ({ width, length }: Props) => {
 
     const handleMouseMove = (e: MouseEvent) => {
       const rect = ctx.canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left - ctx.canvas.width / 2;
-      const mouseY = e.clientY - rect.top - ctx.canvas.height / 2;
+
+      const mouseX =
+        (e.clientX - rect.left - ctx.canvas.width / 2) * (100 / zoom);
+      const mouseY =
+        (e.clientY - rect.top - ctx.canvas.height / 2) * (100 / zoom);
 
       const tile = isoToTile({ x: mouseX, y: mouseY });
 
@@ -43,7 +49,7 @@ export const IsometricGrid = ({ width, length }: Props) => {
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [ctx, width, length]);
+  }, [ctx, width, length, zoom]);
 
   useEffect(() => {
     if (!ctx) return;

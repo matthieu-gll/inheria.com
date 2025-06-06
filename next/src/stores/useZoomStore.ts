@@ -1,4 +1,3 @@
-// stores/zoomStore.ts
 import { DEFAULT_ZOOM } from "@/constants/zoom";
 import { create } from "zustand";
 

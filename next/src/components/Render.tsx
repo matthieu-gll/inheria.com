@@ -20,8 +20,15 @@ export function Render({ children, enableZoom = false }: RenderProps) {
   const resizeCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+
+    // Largeur = largeur fenêtre
+    const width = window.innerWidth;
+
+    // Hauteur = largeur / (16/9)
+    const height = width / (16 / 9);
+
+    canvas.width = width;
+    canvas.height = height;
   };
 
   useEffect(() => {
@@ -84,7 +91,7 @@ export function Render({ children, enableZoom = false }: RenderProps) {
     <RenderingContext value={value}>
       <canvas
         ref={canvasRef}
-        className="fixed inset-0 w-screen h-screen rendering-pixelated"
+        className="fixed rendering-pixelated inset-1/2 -translate-x-1/2 -translate-y-1/2 bg-neutral-900"
       >
         {children}
       </canvas>

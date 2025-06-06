@@ -2,6 +2,7 @@
 
 import { useRendering } from "@/hooks/useRendering";
 import { useEffect, useState, useRef } from "react";
+import { useGridStore } from "@/stores/useGridStore";
 
 const SPRITE_SIZE = 64;
 const SCALE = 2;
@@ -30,6 +31,9 @@ export const Player = ({ position, lookPointer = false }: PlayerProps) => {
 
   const [destination, setDestination] = useState<PlayerPosition | null>(null);
   const positionRef = useRef<PlayerPosition>(position);
+
+  // On récupère les helpers et infos de la grille
+  const { tileToIso, isoToTile, tileSize, width, length } = useGridStore();
 
   const loadSprite = (dir: string) => {
     const img = new Image();
@@ -102,30 +106,30 @@ export const Player = ({ position, lookPointer = false }: PlayerProps) => {
       const screenW = ctx.canvas.width;
       const screenH = ctx.canvas.height;
 
-      const isoX = position.x;
-      const isoY = position.y;
+      // Position actuelle du player en iso
+      const isoX = positionRef.current.x;
+      const isoY = positionRef.current.y;
 
-      // Centrage + correction padding sprite
+      // Centrer le dessin sur le canvas + ajuster le sprite
       const posX = screenW / 2 + isoX - drawWidth / 2;
       const posY = screenH / 2 + isoY - drawHeight + (SPRITE_SIZE / 2) * SCALE;
 
-      // Déplacement vers destination
+      // Déplacement vers destination (si définie)
       if (destination) {
         const speed = 2; // pixels/frame
-        const dx = destination.x - position.x;
-        const dy = destination.y - position.y;
+        const dx = destination.x - positionRef.current.x;
+        const dy = destination.y - positionRef.current.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < speed) {
-          position.x = destination.x;
-          position.y = destination.y;
+          positionRef.current = destination;
           setDestination(null);
         } else {
-          position.x += (dx / dist) * speed;
-          position.y += (dy / dist) * speed;
+          positionRef.current = {
+            x: positionRef.current.x + (dx / dist) * speed,
+            y: positionRef.current.y + (dy / dist) * speed,
+          };
         }
-
-        positionRef.current = position;
       }
 
       ctx.imageSmoothingEnabled = false;
@@ -141,31 +145,21 @@ export const Player = ({ position, lookPointer = false }: PlayerProps) => {
         drawHeight
       );
 
-      // 🔴 Dessin tuile cible
+      // Optionnel: dessiner la tuile cible
       if (destination) {
-        const tileX = destination.x - position.x + isoX;
-        const tileY = destination.y - position.y + isoY;
-
         const px = screenW / 2 + destination.x;
         const py = screenH / 2 + destination.y;
 
         const halfW = TILE_WIDTH / 2;
         const halfH = TILE_HEIGHT / 2;
 
-        const points = [
-          { x: px, y: py },
-          { x: px + halfW, y: py + halfH },
-          { x: px, y: py + TILE_HEIGHT },
-          { x: px - halfW, y: py + halfH },
-        ];
-
         ctx.strokeStyle = "red";
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        points.forEach((p, i) => {
-          if (i > 0) ctx.lineTo(p.x, p.y);
-        });
+        ctx.moveTo(px, py);
+        ctx.lineTo(px + halfW, py + halfH);
+        ctx.lineTo(px, py + TILE_HEIGHT);
+        ctx.lineTo(px - halfW, py + halfH);
         ctx.closePath();
         ctx.stroke();
       }
@@ -179,32 +173,38 @@ export const Player = ({ position, lookPointer = false }: PlayerProps) => {
     const handleClick = (e: MouseEvent) => {
       if (!ctx) return;
       const rect = ctx.canvas.getBoundingClientRect();
+
+      // Coordonnées souris relative au canvas
       const clickX = e.clientX - rect.left;
       const clickY = e.clientY - rect.top;
 
       const canvasCenterX = ctx.canvas.width / 2;
       const canvasCenterY = ctx.canvas.height / 2;
 
+      // Calcul offset relatif au centre (car ta grille est centrée)
       const offsetX = clickX - canvasCenterX;
       const offsetY = clickY - canvasCenterY;
 
-      const tileY =
-        (offsetY / (TILE_HEIGHT / 2) + offsetX / (TILE_WIDTH / 2)) / 2;
-      const tileX =
-        (offsetX / (TILE_WIDTH / 2) - offsetY / (TILE_HEIGHT / 2)) / 2;
+      // Conversion offset -> tuile iso (dans coordonnées de ta grille)
+      const tileCoords = isoToTile({ x: offsetX, y: offsetY });
 
-      const snappedX = Math.round(tileX);
-      const snappedY = Math.round(tileY);
+      // Vérifier limites de la grille
+      if (
+        tileCoords.x >= 0 &&
+        tileCoords.y >= 0 &&
+        tileCoords.x < width &&
+        tileCoords.y < length
+      ) {
+        // Conversion tuile -> coords iso
+        const isoPos = tileToIso(tileCoords);
 
-      const isoX = (snappedX - snappedY) * (TILE_WIDTH / 2);
-      const isoY = (snappedX + snappedY) * (TILE_HEIGHT / 2);
-
-      setDestination({ x: isoX, y: isoY });
+        setDestination(isoPos);
+      }
     };
 
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
-  }, [ctx]);
+  }, [ctx, isoToTile, tileToIso, width, length]);
 
   return null;
 };

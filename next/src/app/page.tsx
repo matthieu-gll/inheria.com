@@ -6,7 +6,7 @@ export default function Home() {
   return (
     <>
       <Render enableZoom>
-        <IsometricGrid width={50} length={50} />
+        <IsometricGrid width={10} length={10} />
         <Player lookPointer position={{ x: 0, y: 0 }} />
       </Render>
     </>
