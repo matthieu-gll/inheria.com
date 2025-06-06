@@ -1,6 +1,6 @@
 "use client";
 
-import { useZoomStore } from "@/stores/zoomStore";
+import { useZoomStore } from "@/stores/useZoomStore";
 import { useControls } from "leva";
 
 export const ZoomControls = () => {

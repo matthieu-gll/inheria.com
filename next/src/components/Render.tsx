@@ -1,7 +1,7 @@
 "use client";
 
 import { RenderingContext } from "@/contexts/CanvasRenderingContext";
-import { useZoomStore } from "@/stores/zoomStore";
+import { useZoomStore } from "@/stores/useZoomStore";
 import { RenderCallback } from "@/types";
 import { useRef, useState, useEffect, PropsWithChildren } from "react";
 import { ZoomControls } from "./ZoomControls";
