@@ -1,21 +1,20 @@
+import { Position } from "@/types";
 import { create } from "zustand";
-
-export type TileCoords = { x: number; y: number };
 
 interface GridStore {
   width: number;
   length: number;
   tileSize: { w: number; h: number };
-  centerOffset: { x: number; y: number };
+  centerOffset: Position;
 
   setDimensions: (width: number, length: number) => void;
   setTileSize: (w: number, h: number) => void;
 
-  tileToIso: (tile: TileCoords) => { x: number; y: number };
-  isoToTile: (iso: { x: number; y: number }) => TileCoords;
+  tileToIso: (tile: Position) => Position;
+  isoToTile: (iso: Position) => Position;
 
-  hoveredTile: TileCoords | null;
-  setHoveredTile: (tile: TileCoords | null) => void;
+  hoveredTile: Position | null;
+  setHoveredTile: (tile: Position | null) => void;
 }
 
 export const useGridStore = create<GridStore>((set, get) => ({

@@ -4,6 +4,7 @@ import { useRendering } from "@/hooks/useRendering";
 import { useEffect } from "react";
 import { useGridStore } from "@/stores/useGridStore";
 import { useZoomStore } from "@/stores/useZoomStore";
+import { usePlayerStore } from "@/stores/usePlayerStore";
 
 interface Props {
   width: number;
@@ -22,6 +23,8 @@ export const IsometricGrid = ({ width, length }: Props) => {
   } = useGridStore();
 
   const { zoom } = useZoomStore();
+
+  const { setDestination } = usePlayerStore();
 
   useEffect(() => {
     setDimensions(width, length);
@@ -103,6 +106,30 @@ export const IsometricGrid = ({ width, length }: Props) => {
     register(draw);
     return () => unregister(draw);
   }, [ctx, tileSize, width, length, hoveredTile]);
+
+  useEffect(() => {
+    if (!ctx) return;
+
+    const handleClick = (e: MouseEvent) => {
+      const rect = ctx.canvas.getBoundingClientRect();
+
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      const offsetX = (clickX - ctx.canvas.width / 2) * (100 / zoom);
+      const offsetY = (clickY - ctx.canvas.height / 2) * (100 / zoom);
+
+      const tile = isoToTile({ x: offsetX, y: offsetY });
+
+      if (tile.x >= 0 && tile.y >= 0 && tile.x < width && tile.y < length) {
+        const iso = tileToIso(tile);
+        setDestination(iso); // ← depuis usePlayerStore
+      }
+    };
+
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, [ctx, zoom, isoToTile, tileToIso, width, length]);
 
   return null;
 };

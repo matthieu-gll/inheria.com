@@ -3,6 +3,7 @@
 import { useRendering } from "@/hooks/useRendering";
 import { useEffect, useState, useRef } from "react";
 import { useGridStore } from "@/stores/useGridStore";
+import { usePlayerStore } from "@/stores/usePlayerStore";
 
 const SPRITE_SIZE = 64;
 const SCALE = 2;
@@ -29,11 +30,8 @@ export const Player = ({ position, lookPointer = false }: PlayerProps) => {
   const [direction, setDirection] = useState("S");
   const currentDirection = useRef("S");
 
-  const [destination, setDestination] = useState<PlayerPosition | null>(null);
+  const { destination, setDestination } = usePlayerStore();
   const positionRef = useRef<PlayerPosition>(position);
-
-  // On récupère les helpers et infos de la grille
-  const { tileToIso, isoToTile, tileSize, width, length } = useGridStore();
 
   const loadSprite = (dir: string) => {
     const img = new Image();
@@ -168,43 +166,6 @@ export const Player = ({ position, lookPointer = false }: PlayerProps) => {
     register(draw);
     return () => unregister(draw);
   }, [ctx, sprite, destination]);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (!ctx) return;
-      const rect = ctx.canvas.getBoundingClientRect();
-
-      // Coordonnées souris relative au canvas
-      const clickX = e.clientX - rect.left;
-      const clickY = e.clientY - rect.top;
-
-      const canvasCenterX = ctx.canvas.width / 2;
-      const canvasCenterY = ctx.canvas.height / 2;
-
-      // Calcul offset relatif au centre (car ta grille est centrée)
-      const offsetX = clickX - canvasCenterX;
-      const offsetY = clickY - canvasCenterY;
-
-      // Conversion offset -> tuile iso (dans coordonnées de ta grille)
-      const tileCoords = isoToTile({ x: offsetX, y: offsetY });
-
-      // Vérifier limites de la grille
-      if (
-        tileCoords.x >= 0 &&
-        tileCoords.y >= 0 &&
-        tileCoords.x < width &&
-        tileCoords.y < length
-      ) {
-        // Conversion tuile -> coords iso
-        const isoPos = tileToIso(tileCoords);
-
-        setDestination(isoPos);
-      }
-    };
-
-    window.addEventListener("click", handleClick);
-    return () => window.removeEventListener("click", handleClick);
-  }, [ctx, isoToTile, tileToIso, width, length]);
 
   return null;
 };
