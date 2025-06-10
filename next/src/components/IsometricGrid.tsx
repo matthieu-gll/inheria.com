@@ -3,7 +3,6 @@
 import { useRendering } from "@/hooks/useRendering";
 import { useEffect } from "react";
 import { useGridStore } from "@/stores/useGridStore";
-import { useZoomStore } from "@/stores/useZoomStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 
 interface Props {
@@ -22,26 +21,38 @@ export const IsometricGrid = ({ width, length }: Props) => {
     setDimensions,
   } = useGridStore();
 
-  const { zoom } = useZoomStore();
-
   const { setDestination } = usePlayerStore();
 
   useEffect(() => {
     setDimensions(width, length);
   }, [width, length, setDimensions]);
 
+  const getGridOffset = (canvasWidth: number, canvasHeight: number) => {
+    const gridWidth = ((width + length) * tileSize.w) / 2;
+    const gridHeight = ((width + length) * tileSize.h) / 2;
+
+    const offsetX = (canvasWidth - gridWidth) / 2 + gridWidth / 2;
+    const offsetY = (canvasHeight - gridHeight) / 2;
+
+    return { offsetX, offsetY };
+  };
+
   useEffect(() => {
     if (!ctx) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       const rect = ctx.canvas.getBoundingClientRect();
+      const rawX = e.clientX - rect.left;
+      const rawY = e.clientY - rect.top;
 
-      const mouseX =
-        (e.clientX - rect.left - ctx.canvas.width / 2) * (100 / zoom);
-      const mouseY =
-        (e.clientY - rect.top - ctx.canvas.height / 2) * (100 / zoom);
+      const screenW = ctx.canvas.width;
+      const screenH = ctx.canvas.height;
+      const { offsetX, offsetY } = getGridOffset(screenW, screenH);
 
-      const tile = isoToTile({ x: mouseX, y: mouseY });
+      const adjustedX = rawX - offsetX;
+      const adjustedY = rawY - offsetY;
+
+      const tile = isoToTile({ x: adjustedX, y: adjustedY });
 
       if (tile.x >= 0 && tile.y >= 0 && tile.x < width && tile.y < length) {
         setHoveredTile(tile);
@@ -50,9 +61,33 @@ export const IsometricGrid = ({ width, length }: Props) => {
       }
     };
 
+    const handleClick = (e: MouseEvent) => {
+      const rect = ctx.canvas.getBoundingClientRect();
+      const rawX = e.clientX - rect.left;
+      const rawY = e.clientY - rect.top;
+
+      const screenW = ctx.canvas.width;
+      const screenH = ctx.canvas.height;
+      const { offsetX, offsetY } = getGridOffset(screenW, screenH);
+
+      const adjustedX = rawX - offsetX;
+      const adjustedY = rawY - offsetY;
+
+      const tile = isoToTile({ x: adjustedX, y: adjustedY });
+
+      if (tile.x >= 0 && tile.y >= 0 && tile.x < width && tile.y < length) {
+        setDestination(tile);
+      }
+    };
+
     window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [ctx, width, length, zoom, isoToTile, setHoveredTile]);
+    window.addEventListener("click", handleClick);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("click", handleClick);
+    };
+  }, [ctx, width, length, tileSize, isoToTile, setHoveredTile, setDestination]);
 
   useEffect(() => {
     if (!ctx) return;
@@ -60,14 +95,12 @@ export const IsometricGrid = ({ width, length }: Props) => {
     const draw = (ctx: CanvasRenderingContext2D) => {
       const screenW = ctx.canvas.width;
       const screenH = ctx.canvas.height;
-
-      const offsetX = screenW / 2;
-      const offsetY = screenH / 2;
+      const { offsetX, offsetY } = getGridOffset(screenW, screenH);
 
       ctx.save();
       ctx.translate(offsetX, offsetY);
 
-      // Dessin normal de la grille
+      // Grille de fond
       ctx.strokeStyle = "#555";
       ctx.lineWidth = 1;
       ctx.globalAlpha = 0.2;
@@ -86,7 +119,7 @@ export const IsometricGrid = ({ width, length }: Props) => {
         }
       }
 
-      // Dessin de la tuile survolée
+      // Tuile survolée
       if (hoveredTile) {
         const iso = tileToIso(hoveredTile);
         ctx.globalAlpha = 0.5;
@@ -105,31 +138,16 @@ export const IsometricGrid = ({ width, length }: Props) => {
 
     register(draw);
     return () => unregister(draw);
-  }, [ctx, tileSize, width, length, hoveredTile, tileToIso, register, unregister]);
-
-  useEffect(() => {
-    if (!ctx) return;
-
-    const handleClick = (e: MouseEvent) => {
-      const rect = ctx.canvas.getBoundingClientRect();
-
-      const clickX = e.clientX - rect.left;
-      const clickY = e.clientY - rect.top;
-
-      const offsetX = (clickX - ctx.canvas.width / 2) * (100 / zoom);
-      const offsetY = (clickY - ctx.canvas.height / 2) * (100 / zoom);
-
-      const tile = isoToTile({ x: offsetX, y: offsetY });
-
-      if (tile.x >= 0 && tile.y >= 0 && tile.x < width && tile.y < length) {
-        const iso = tileToIso(tile);
-        setDestination(iso); // ← depuis usePlayerStore
-      }
-    };
-
-    window.addEventListener("click", handleClick);
-    return () => window.removeEventListener("click", handleClick);
-  }, [ctx, zoom, isoToTile, tileToIso, width, length, setDestination]);
+  }, [
+    ctx,
+    tileSize,
+    width,
+    length,
+    hoveredTile,
+    tileToIso,
+    register,
+    unregister,
+  ]);
 
   return null;
 };
