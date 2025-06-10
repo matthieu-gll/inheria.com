@@ -28,7 +28,7 @@ export const IsometricGrid = ({ width, length }: Props) => {
 
   useEffect(() => {
     setDimensions(width, length);
-  }, [width, length]);
+  }, [width, length, setDimensions]);
 
   useEffect(() => {
     if (!ctx) return;
@@ -52,7 +52,7 @@ export const IsometricGrid = ({ width, length }: Props) => {
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [ctx, width, length, zoom]);
+  }, [ctx, width, length, zoom, isoToTile, setHoveredTile]);
 
   useEffect(() => {
     if (!ctx) return;
@@ -105,7 +105,7 @@ export const IsometricGrid = ({ width, length }: Props) => {
 
     register(draw);
     return () => unregister(draw);
-  }, [ctx, tileSize, width, length, hoveredTile]);
+  }, [ctx, tileSize, width, length, hoveredTile, tileToIso, register, unregister]);
 
   useEffect(() => {
     if (!ctx) return;
@@ -129,7 +129,7 @@ export const IsometricGrid = ({ width, length }: Props) => {
 
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
-  }, [ctx, zoom, isoToTile, tileToIso, width, length]);
+  }, [ctx, zoom, isoToTile, tileToIso, width, length, setDestination]);
 
   return null;
 };

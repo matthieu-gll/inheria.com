@@ -27,7 +27,7 @@ export const useGridStore = create<GridStore>((set, get) => ({
   setTileSize: (w, h) => set({ tileSize: { w, h } }),
 
   tileToIso: ({ x, y }) => {
-    const { tileSize, width, length } = get();
+    const { tileSize } = get();
     return {
       x: (x - y) * (tileSize.w / 2),
       y: (x + y) * (tileSize.h / 2),

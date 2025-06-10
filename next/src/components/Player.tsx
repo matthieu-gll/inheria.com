@@ -6,7 +6,11 @@ import { usePlayerStore } from "@/stores/usePlayerStore";
 
 const SPRITE_SIZE = 64;
 const SCALE = 2;
-const FRAME_COUNT = 12;
+const FRAME_COUNTS: Record<string, number> = {
+  idle: 12,
+  walk: 8,
+};
+
 const FRAME_DURATION = 100;
 const TILE_WIDTH = 64;
 const TILE_HEIGHT = 32;
@@ -68,7 +72,7 @@ export const Player = ({ position, lookPointer = false }: PlayerProps) => {
         };
       });
     });
-  }, []);
+  }, [animationType, direction]);
 
   useEffect(() => {
     const key = `${animationType}_${direction}`;
@@ -119,15 +123,18 @@ export const Player = ({ position, lookPointer = false }: PlayerProps) => {
 
     window.addEventListener("mousemove", updateDirection);
     return () => window.removeEventListener("mousemove", updateDirection);
-  }, []);
+  }, [lookPointer]);
 
   useEffect(() => {
     if (!ctx || !sprite) return;
 
     const draw = (ctx: CanvasRenderingContext2D) => {
       const now = performance.now();
+
+      const currentFrameCount = FRAME_COUNTS[animationType] || 1;
+
       if (now - lastFrameTime.current > FRAME_DURATION) {
-        frameRef.current = (frameRef.current + 1) % FRAME_COUNT;
+        frameRef.current = (frameRef.current + 1) % currentFrameCount;
         lastFrameTime.current = now;
       }
 
@@ -174,6 +181,7 @@ export const Player = ({ position, lookPointer = false }: PlayerProps) => {
       }
 
       ctx.imageSmoothingEnabled = false;
+      console.log(frameX);
       ctx.drawImage(
         sprite,
         frameX,
@@ -185,13 +193,6 @@ export const Player = ({ position, lookPointer = false }: PlayerProps) => {
         drawWidth,
         drawHeight
       );
-
-      // === Debug : cadre autour du sprite dessiné ===
-      ctx.save();
-      ctx.strokeStyle = "rgba(255, 0, 0, 0.6)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(posX, posY, drawWidth, drawHeight);
-      ctx.restore();
 
       // Optionnel: dessiner la tuile cible
       if (destination) {
@@ -215,7 +216,16 @@ export const Player = ({ position, lookPointer = false }: PlayerProps) => {
 
     register(draw);
     return () => unregister(draw);
-  }, [ctx, sprite, destination]);
+  }, [
+    ctx,
+    sprite,
+    destination,
+    animationType,
+    direction,
+    register,
+    setDestination,
+    unregister,
+  ]);
 
   return null;
 };
